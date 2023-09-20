@@ -176,6 +176,7 @@ protected:
 	Node* last_added_node;
 	Node* parent_of_last_erased_node;
 
+	TREE_TYPES type;
 	int m_size;
 
 	void swapNodes(Node* _node1, Node* _node2);
@@ -183,8 +184,22 @@ protected:
 
 //Public members:
 public:
-	Tree() : root(nullptr), last_added_node(nullptr), parent_of_last_erased_node(nullptr), m_size(0) {};
-	Tree(const KeyType& _key, const ValueType& _value) : root(new Node(_key, _value)), last_added_node(root), m_size(1) {};
+	Tree() 
+	{
+		type = TREE_TYPES::RANDOMIZED;
+		root = nullptr;
+		m_size = 0;
+		last_added_node = nullptr;
+		parent_of_last_erased_node = nullptr;
+	};
+	Tree(const KeyType& _key, const ValueType& _value) 
+	{
+		type = TREE_TYPES::RANDOMIZED;
+		root = new Node(_key, _value);
+		m_size = 1;
+		last_added_node = root;
+		parent_of_last_erased_node = nullptr;
+	};
 	Tree(const std::pair<KeyType, ValueType>& _pair) : Tree(_pair.first, _pair.second) {};
 	Tree(const std::vector<std::pair<KeyType, ValueType>>& _vector)
 	{
@@ -257,99 +272,30 @@ Tree<KeyType, ValueType>::Node* Tree<KeyType, ValueType>::innerFind(const KeyTyp
 	}
 }
 
-//template<KEY KeyType, typename ValueType>
-//bool Tree<KeyType, ValueType>::insert(const KeyType& _key, const ValueType& _value)
-//{
-//	if (!root)
-//	{
-//		switch (type)
-//		{
-//		case TREE_TYPES::RANDOMIZED:
-//			root = new BasicNode<KeyType, ValueType>(_key, _value);
-//			break;
-//		case TREE_TYPES::AVL:
-//			root = new AVLNode<KeyType, ValueType>(_key, _value);
-//			break;
-//		case TREE_TYPES::RB:
-//			root = new RBNode<KeyType, ValueType>(_key, _value);
-//			break;
-//		}
-//
-//		last_added_node = root;
-//		++m_size;
-//		return true;
-//	}
-//
-//	Node* searchPtr = root;
-//	while (true)
-//	{
-//		if (_key == searchPtr->key)
-//			return false;
-//
-//		if (_key > searchPtr->key)
-//		{
-//			if (!searchPtr->right)
-//			{
-//				switch (type)
-//				{
-//				case TREE_TYPES::RANDOMIZED:
-//					searchPtr->right = new BasicNode<KeyType, ValueType>(_key, _value, searchPtr);
-//					break;
-//				case TREE_TYPES::AVL:
-//					searchPtr->right = new AVLNode<KeyType, ValueType>(_key, _value, searchPtr);
-//					break;
-//				case TREE_TYPES::RB:
-//					searchPtr->right = new RBNode<KeyType, ValueType>(_key, _value, searchPtr);
-//					break;
-//				}
-//
-//				last_added_node = searchPtr->right;
-//				++m_size;				
-//				return true;
-//			}
-//
-//			searchPtr = searchPtr->right;
-//		}
-//		else
-//		{
-//			if (!searchPtr->left)
-//			{
-//				switch (type)
-//				{
-//				case TREE_TYPES::RANDOMIZED:
-//					searchPtr->left = new BasicNode<KeyType, ValueType>(_key, _value, searchPtr);
-//					break;
-//				case TREE_TYPES::AVL:
-//					searchPtr->left = new AVLNode<KeyType, ValueType>(_key, _value, searchPtr);
-//					break;
-//				case TREE_TYPES::RB:
-//					searchPtr->left = new RBNode<KeyType, ValueType>(_key, _value, searchPtr);
-//					break;
-//				}
-//
-//				last_added_node = searchPtr->left;
-//				++m_size;
-//				return true;
-//			}
-//
-//			searchPtr = searchPtr->left;
-//		}
-//	}
-//}
-
 template<KEY KeyType, typename ValueType>
 bool Tree<KeyType, ValueType>::insert(const KeyType& _key, const ValueType& _value)
 {
 	if (!root)
 	{
-		root = new Node(_key, _value);
+		switch (type)
+		{
+		case TREE_TYPES::RANDOMIZED:
+			root = new BasicNode<KeyType, ValueType>(_key, _value);
+			break;
+		case TREE_TYPES::AVL:
+			root = new AVLNode<KeyType, ValueType>(_key, _value);
+			break;
+		case TREE_TYPES::RB:
+			root = new RBNode<KeyType, ValueType>(_key, _value);
+			break;
+		}
+
 		last_added_node = root;
 		++m_size;
 		return true;
 	}
 
 	Node* searchPtr = root;
-
 	while (true)
 	{
 		if (_key == searchPtr->key)
@@ -359,9 +305,21 @@ bool Tree<KeyType, ValueType>::insert(const KeyType& _key, const ValueType& _val
 		{
 			if (!searchPtr->right)
 			{
-				searchPtr->right = new Node(_key, _value, searchPtr);
+				switch (type)
+				{
+				case TREE_TYPES::RANDOMIZED:
+					searchPtr->right = new BasicNode<KeyType, ValueType>(_key, _value, searchPtr);
+					break;
+				case TREE_TYPES::AVL:
+					searchPtr->right = new AVLNode<KeyType, ValueType>(_key, _value, searchPtr);
+					break;
+				case TREE_TYPES::RB:
+					searchPtr->right = new RBNode<KeyType, ValueType>(_key, _value, searchPtr);
+					break;
+				}
+
 				last_added_node = searchPtr->right;
-				++m_size;
+				++m_size;				
 				return true;
 			}
 
@@ -371,16 +329,69 @@ bool Tree<KeyType, ValueType>::insert(const KeyType& _key, const ValueType& _val
 		{
 			if (!searchPtr->left)
 			{
-				searchPtr->left = new Node(_key, _value, searchPtr);
+				switch (type)
+				{
+				case TREE_TYPES::RANDOMIZED:
+					searchPtr->left = new BasicNode<KeyType, ValueType>(_key, _value, searchPtr);
+					break;
+				case TREE_TYPES::AVL:
+					searchPtr->left = new AVLNode<KeyType, ValueType>(_key, _value, searchPtr);
+					break;
+				case TREE_TYPES::RB:
+					searchPtr->left = new RBNode<KeyType, ValueType>(_key, _value, searchPtr);
+					break;
+				}
+
 				last_added_node = searchPtr->left;
 				++m_size;
 				return true;
 			}
+
 			searchPtr = searchPtr->left;
 		}
 	}
-
 }
+
+//template<KEY KeyType, typename ValueType>
+//bool Tree<KeyType, ValueType>::insert(const KeyType& _key, const ValueType& _value)
+//{
+//	if (!root)
+//	{
+//		root = new Node(_key, _value);
+//		++m_size;
+//		return true;
+//	}
+//
+//	Node* searchPtr = root;
+//
+//	while (true)
+//	{
+//		if (_key == searchPtr->key)
+//			return false;
+//
+//		if (_key > searchPtr->key)
+//		{
+//			if (!searchPtr->right)
+//			{
+//				searchPtr->right = new Node(_key, _value, searchPtr);
+//				++m_size;
+//				return true;
+//			}
+//
+//			searchPtr = searchPtr->right;
+//		}
+//		else
+//		{
+//			if (!searchPtr->left)
+//			{
+//				searchPtr->left = new Node(_key, _value, searchPtr);
+//				++m_size;
+//				return true;
+//			}
+//			searchPtr = searchPtr->left;
+//		}
+//	}
+//}
 
 template<KEY KeyType, typename ValueType>
 bool Tree<KeyType, ValueType>::insert(const std::pair<KeyType, ValueType>& _pair)
@@ -664,6 +675,11 @@ template<KEY KeyType, typename ValueType>
 class AVLTree : public Tree<KeyType, ValueType>
 {
 	using Node = BasicNode<KeyType, ValueType>;
+	using Tree<KeyType, ValueType>::type;
+	using Tree<KeyType, ValueType>::root;
+	using Tree<KeyType, ValueType>::m_size;
+	using Tree<KeyType, ValueType>::last_added_node;		
+	using Tree<KeyType, ValueType>::parent_of_last_erased_node;
 
 //Protected members:
 protected:
@@ -677,7 +693,10 @@ protected:
 
 //Public members:
 public:
-	AVLTree() {};
+	AVLTree()
+	{
+		type = TREE_TYPES::AVL;
+	};
 	virtual ~AVLTree() {};
 
 	virtual bool insert(const KeyType& _key, const ValueType& _value) override;
@@ -730,8 +749,7 @@ public:
 template<KEY KeyType, typename ValueType>
 void AVLTree<KeyType, ValueType>::calculateHeight(Node* _node)
 {
-	short lheight = -1;
-	short rheight = -1;
+	short lheight = -1, rheight = -1;
 	getSubTreesHeight(_node, lheight, rheight);
 
 	_node->setHeight(std::max(lheight, rheight) + 1);
@@ -765,8 +783,7 @@ void AVLTree<KeyType, ValueType>::leftRotate(Node* _node)
 	Node* parentOfNode = _node->parent;
 	Node* rightChild = _node->right;
 
-	short lheight = -1;
-	short rheight = -1;
+	short lheight = -1, rheight = -1;
 	getSubTreesHeight(rightChild, lheight, rheight);
 
 	//≈сли высота левого поддерева правого ребенка больше высоты его правого поддерева
@@ -790,8 +807,8 @@ void AVLTree<KeyType, ValueType>::leftRotate(Node* _node)
 
 	if (!parentOfNode)
 	{
-		this->root = rightChild;
-		this->root->parent = nullptr;
+		root = rightChild;
+		root->parent = nullptr;
 		return;
 	}
 
@@ -810,8 +827,7 @@ void AVLTree<KeyType, ValueType>::rightRotate(Node* _node)
 	Node* parentOfNode = _node->parent;
 	Node* leftChild = _node->left;
 
-	short lheight = -1;
-	short rheight = -1;
+	short lheight = -1, rheight = -1;
 	getSubTreesHeight(leftChild, lheight, rheight);
 
 	//≈сли высота левого поддерева правого ребенка больше высоты его правого поддерева
@@ -835,8 +851,8 @@ void AVLTree<KeyType, ValueType>::rightRotate(Node* _node)
 
 	if (!parentOfNode)
 	{
-		this->root = leftChild;
-		this->root->parent = nullptr;
+		root = leftChild;
+		root->parent = nullptr;
 		return;
 	}
 
@@ -879,53 +895,21 @@ void AVLTree<KeyType, ValueType>::balance(Node* _node)
 template<KEY KeyType, typename ValueType>
 bool AVLTree<KeyType, ValueType>::insert(const KeyType& _key, const ValueType& _value)
 {
-	if (!this->root)
-	{
-		this->root = new AVLNode(_key, _value);
-		++(this->m_size);
+	auto result = Tree<KeyType, ValueType>::insert(_key, _value);
+	if (!result)
+		return false;
+
+	//≈сли у добавленного узла нет родител€, значит он был корнем
+	if (!last_added_node->parent)
 		return true;
-	}
-
-	Node* searchPtr = this->root;
-
-	while (true)
-	{
-		if (_key == searchPtr->key)
-			return false;
-
-		if (_key > searchPtr->key)
-		{
-			if (!searchPtr->right)
-			{
-				searchPtr->right = new Node(_key, _value, searchPtr);
-				this->last_added_node = searchPtr->right;
-				++(this->m_size);
-				break;
-			}
-
-			searchPtr = searchPtr->right;
-		}
-		else
-		{
-			if (!searchPtr->left)
-			{
-				searchPtr->left = new Node(_key, _value, searchPtr);
-				this->last_added_node = searchPtr->left;
-				++(this->m_size);
-				break;
-			}
-			searchPtr = searchPtr->left;
-		}
-	}
 
 	//≈сли у родительского узла стало 2 ребенка, 
 	//значит высота не изменилась и балансировка не нужна
-	if (this->last_added_node->parent->left &&
-		this->last_added_node->parent->right) 
+	if (last_added_node->parent->left && last_added_node->parent->right) 
 		return true;
 
-	updateHeight(this->last_added_node);
-	balance(this->last_added_node->parent);
+	updateHeight(last_added_node);
+	balance(last_added_node->parent);
 
 	return true;
 }
@@ -937,11 +921,11 @@ bool AVLTree<KeyType, ValueType>::erase(const KeyType& _key)
 	if (!result)
 		return false;
 
-	if (!this->parent_of_last_erased_node)
+	if (parent_of_last_erased_node)
 		return true;
 
-	updateHeight(this->parent_of_last_erased_node);
-	balance(this->parent_of_last_erased_node);
+	updateHeight(parent_of_last_erased_node);
+	balance(parent_of_last_erased_node);
 	return true;
 }
 
@@ -958,6 +942,13 @@ template<KEY KeyType, typename ValueType>
 class RBTree : public Tree<KeyType, ValueType>
 {
 	using Node = BasicNode<KeyType, ValueType>;
+	using Tree<KeyType, ValueType>::type;
+	using Tree<KeyType, ValueType>::root;
+	using Tree<KeyType, ValueType>::m_size;
+	using Tree<KeyType, ValueType>::last_added_node;
+	using Tree<KeyType, ValueType>::parent_of_last_erased_node;
+
+//Protected members:
 protected:
 
 	struct structForInsertBalance
@@ -1013,7 +1004,7 @@ protected:
 			setNode(_node);
 		}
 
-		setNode(Node* _node)
+		void setNode(Node* _node)
 		{
 			parent = _node->parent;
 			node_color = _node->getColor();
@@ -1068,7 +1059,7 @@ protected:
 	void insertBalance();
 	void eraseBalance(structForEraseBalance& sfeb);
 
-
+//Public members:
 public:
 	RBTree() {};
 
@@ -1092,8 +1083,8 @@ void RBTree<KeyType, ValueType>::leftRotate(Node* _node)
 
 	if (!parentOfNode)
 	{
-		this->root = rightChild;
-		this->root->parent = nullptr;
+		root = rightChild;
+		root->parent = nullptr;
 		return;
 	}
 
@@ -1114,49 +1105,19 @@ void RBTree<KeyType, ValueType>::rightRotate(Node* _node)
 template<KEY KeyType, typename ValueType>
 bool RBTree<KeyType, ValueType>::insert(const KeyType& _key, const ValueType& _value)
 {
-	if (!this->root)
+	auto result = Tree<KeyType, ValueType>::insert(_key, _value);
+
+	if (!result)
+		return false;
+
+	if (!last_added_node->parent)
 	{
-		this->root = new RBNode(_key, _value);
-		this->root->setColor('B');
-		++(this->m_size);
+		root->setColor('B');
 		return true;
 	}
 
-	Node* searchPtr = this->root;
-
-	while (true)
-	{
-		if (_key == searchPtr->key)
-			return false;
-
-		if (_key > searchPtr->key)
-		{
-			if (!searchPtr->right)
-			{
-				searchPtr->right = new RBNode(_key, _value, searchPtr);
-				++(this->m_size);
-				this->last_added_node = searchPtr->right;
-				break;
-			}
-
-			searchPtr = searchPtr->right;
-		}
-		else
-		{
-			if (!searchPtr->left)
-			{
-				searchPtr->left = new RBNode(_key, _value, searchPtr);
-				++(this->m_size);
-				this->last_added_node = searchPtr->left;
-				break;
-			}
-
-			searchPtr = searchPtr->left;
-		}
-	}
-
 	//≈сли родитель был черный, значит балансировка не нужна
-	if (this->last_added_node->parent->getColor() == 'B')
+	if (last_added_node->parent->getColor() == 'B')
 		return true;
 
 	insertBalance();
@@ -1182,60 +1143,60 @@ bool RBTree<KeyType, ValueType>::erase(const KeyType& _key)
 
 		sfeb.setNode(newNode);
 		this->swapNodes(nodeToErase, newNode);
-		this->parent_of_last_erased_node = newNode->parent;
+		parent_of_last_erased_node = newNode->parent;
 
 		if (newNode->left)
 		{
-			newNode->left->parent = this->parent_of_last_erased_node;
+			newNode->left->parent = parent_of_last_erased_node;
 
-			if (this->parent_of_last_erased_node->right == newNode)
-				this->parent_of_last_erased_node->right = newNode->left;
+			if (parent_of_last_erased_node->right == newNode)
+				parent_of_last_erased_node->right = newNode->left;
 			else
-				this->parent_of_last_erased_node->left = newNode->left;
+				parent_of_last_erased_node->left = newNode->left;
 
 			delete newNode;
-			--(this->m_size);
+			m_size;
 			eraseBalance(sfeb);
 			return true;
 		}
 
 
-		if (this->parent_of_last_erased_node->right == newNode)
-			this->parent_of_last_erased_node->right = nullptr;
+		if (parent_of_last_erased_node->right == newNode)
+			parent_of_last_erased_node->right = nullptr;
 		else
-			this->parent_of_last_erased_node->left = nullptr;
+			parent_of_last_erased_node->left = nullptr;
 
 		delete newNode;
-		--(this->m_size);
+		m_size;
 		eraseBalance(sfeb);
 		return true;
 	}
 
 	sfeb.setNode(nodeToErase); //nodeToErase будет фактически удален
-	this->parent_of_last_erased_node = nodeToErase->parent;
+	parent_of_last_erased_node = nodeToErase->parent;
 
 	if (nodeToErase->left)
 	{	
 		//≈сли удал€емый элемент был корнем, достаточно просто перекрасить новый корень в черный
-		if (nodeToErase == this->root)
+		if (nodeToErase == root)
 		{
-			this->root = this->root->left;
-			this->root->parent = nullptr;
+			root =root->left;
+			troot->parent = nullptr;
 
 			delete nodeToErase;
-			--(this->m_size);
+			m_size;
 			return true;
 		}
 
-		if (this->parent_of_last_erased_node->right == nodeToErase)
-			this->parent_of_last_erased_node->right = nodeToErase->left;
+		if (parent_of_last_erased_node->right == nodeToErase)
+			parent_of_last_erased_node->right = nodeToErase->left;
 		else
-			this->parent_of_last_erased_node->left = nodeToErase->left;
+			parent_of_last_erased_node->left = nodeToErase->left;
 
-		nodeToErase->left->parent = this->parent_of_last_erased_node;
+		nodeToErase->left->parent = parent_of_last_erased_node;
 
 		delete nodeToErase;
-		--(this->m_size);
+		m_size;
 		eraseBalance(sfeb);
 
 		return true;
@@ -1244,13 +1205,13 @@ bool RBTree<KeyType, ValueType>::erase(const KeyType& _key)
 	if (nodeToErase->right)
 	{
 		//≈сли удал€емый элемент был корнем, достаточно просто перекрасить новый корень в черный
-		if (nodeToErase == this->root)
+		if (nodeToErase == root)
 		{
-			this->root = this->root->right;
-			this->root->parent = nullptr;
+			root = root->right;
+			root->parent = nullptr;
 
 			delete nodeToErase;
-			--(this->m_size);
+			m_size;
 			return true;
 		}
 
