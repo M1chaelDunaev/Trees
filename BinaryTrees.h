@@ -116,6 +116,8 @@ public:
 
 			Node* searchPtr;
 
+			//Если узел имеет правое поддерево, то следующий ключ будет у самого левого узла 
+			//этого поддерева
 			if (pointerToNode->right)
 			{
 				searchPtr = pointerToNode->right;
@@ -125,7 +127,8 @@ public:
 				pointerToNode = searchPtr;
 				return;
 			}
-
+			//Если правого поддерева нет, идем вверх по родителям, пока их ключи
+			//меньше ключа текущего узла
 			searchPtr = pointerToNode->parent;
 			while (searchPtr->key < pointerToNode->key)
 				searchPtr = searchPtr->parent;
@@ -151,7 +154,8 @@ public:
 			}
 
 			Node* searchPtr;
-
+			//Если есть левое поддерево, следующий ключ будет у самого правого узла
+			//данного поддерева
 			if (pointerToNode->left)
 			{
 				searchPtr = pointerToNode->left;
@@ -162,6 +166,8 @@ public:
 				return;
 			}
 
+			//Если левого поддерева нет, идем вверх по родителям, пока их ключи
+			//больше ключа текущего узла
 			searchPtr = pointerToNode->parent;
 			while (searchPtr->key > pointerToNode->parent)
 				searchPtr = searchPtr->parent;
@@ -201,11 +207,11 @@ public:
 		parent_of_last_erased_node = nullptr;
 	};
 	Tree(const std::pair<KeyType, ValueType>& _pair) : Tree(_pair.first, _pair.second) {};
-	Tree(const std::vector<std::pair<KeyType, ValueType>>& _vector)
-	{
-		Tree();
+	Tree(const std::vector<std::pair<KeyType, ValueType>>& _vector) : Tree()
+	{		
 		for (const auto& pair : _vector)
 			insert(pair);
+		parent_of_last_erased_node = nullptr;
 	};
 	
 	virtual ~Tree() { clear();};
@@ -221,7 +227,7 @@ public:
 
 	bool setValue(const KeyType& _key, const ValueType& _value);
 
-	std::pair<bool, Iterator> find(const KeyType& _key);
+	Iterator find(const KeyType& _key);
 	std::vector< std::pair<KeyType, ValueType&> > getVector() const;
 
 	Iterator begin();
@@ -352,47 +358,6 @@ bool Tree<KeyType, ValueType>::insert(const KeyType& _key, const ValueType& _val
 	}
 }
 
-//template<KEY KeyType, typename ValueType>
-//bool Tree<KeyType, ValueType>::insert(const KeyType& _key, const ValueType& _value)
-//{
-//	if (!root)
-//	{
-//		root = new Node(_key, _value);
-//		++m_size;
-//		return true;
-//	}
-//
-//	Node* searchPtr = root;
-//
-//	while (true)
-//	{
-//		if (_key == searchPtr->key)
-//			return false;
-//
-//		if (_key > searchPtr->key)
-//		{
-//			if (!searchPtr->right)
-//			{
-//				searchPtr->right = new Node(_key, _value, searchPtr);
-//				++m_size;
-//				return true;
-//			}
-//
-//			searchPtr = searchPtr->right;
-//		}
-//		else
-//		{
-//			if (!searchPtr->left)
-//			{
-//				searchPtr->left = new Node(_key, _value, searchPtr);
-//				++m_size;
-//				return true;
-//			}
-//			searchPtr = searchPtr->left;
-//		}
-//	}
-//}
-
 template<KEY KeyType, typename ValueType>
 bool Tree<KeyType, ValueType>::insert(const std::pair<KeyType, ValueType>& _pair)
 {
@@ -408,6 +373,7 @@ bool Tree<KeyType, ValueType>::erase(const KeyType& _key)
 		return false;
 
 	//Если у удаляемого узла 2 потомка, ищем самый правый узел левого поддерева
+	//он будет фактически удален
 	if (nodeToErase->left && nodeToErase->right)
 	{
 		Node* newNode = nodeToErase->left;
@@ -542,13 +508,13 @@ bool Tree<KeyType, ValueType>::setValue(const KeyType& _key, const ValueType& _v
 }
 
 template<KEY KeyType, typename ValueType>
-std::pair<bool, typename Tree<KeyType, ValueType>::Iterator> Tree<KeyType, ValueType>::find(const KeyType& _key)
+Tree<KeyType, ValueType>::Iterator Tree<KeyType, ValueType>::find(const KeyType& _key)
 {
 	Node* result = innerFind(_key);
 	if (!result)
-		return { false, {nullptr, nullptr} };
+		return afterEnd();
 
-	return { true, {result, this} };
+	return { result, this };
 }
 
 template<KEY KeyType, typename ValueType>
@@ -696,54 +662,32 @@ public:
 	AVLTree()
 	{
 		type = TREE_TYPES::AVL;
+		m_size = 0;
+		root = nullptr;
+		last_added_node = nullptr;
+		parent_of_last_erased_node = nullptr;
 	};
+	AVLTree(const KeyType& _key, const ValueType& _value)
+	{
+		type = TREE_TYPES::AVL;
+		root = new AVLNode<KeyType, ValueType>(_key, _value);
+		m_size = 1;
+		last_added_node = root;
+		parent_of_last_erased_node = nullptr;
+	}
+	AVLTree(const std::pair<KeyType, ValueType>& _pair) : AVLTree(_pair.first, _pair.second) {};
+	AVLTree(const std::vector<std::pair<KeyType, ValueType>>& _vector) : AVLTree()
+	{
+		for (const auto& pair : _vector)
+			this->insert(pair);
+		parent_of_last_erased_node = nullptr;
+	}
+	
 	virtual ~AVLTree() {};
 
 	virtual bool insert(const KeyType& _key, const ValueType& _value) override;
 	virtual bool erase(const KeyType& _key) override;
 
-	bool isBalanced(int& _key)
-	{
-		Node* searchPtr = this->root;
-		std::stack<Node*> stack;
-		stack.push(searchPtr);
-		searchPtr = searchPtr->left;
-
-		while (!stack.empty() || searchPtr)
-		{
-			while (searchPtr)
-			{
-				stack.push(searchPtr);
-				searchPtr = searchPtr->left;
-			}
-
-			searchPtr = stack.top();
-			stack.pop();
-
-			int lheight = -1;
-			int rheight = -1;
-
-			if (searchPtr->left)
-				lheight = searchPtr->left->getHeight();
-			if (searchPtr->right)
-				rheight = searchPtr->right->getHeight();
-
-			if ((rheight)-(lheight) <= -2)
-			{
-				_key = searchPtr->key;
-				return false;
-			}
-
-			if ((rheight)-(lheight) >= 2)
-			{
-				_key = searchPtr->key;
-				return false;
-			}
-
-			searchPtr = searchPtr->right;
-		}
-		return true;
-	}
 };
 
 template<KEY KeyType, typename ValueType>
@@ -921,7 +865,7 @@ bool AVLTree<KeyType, ValueType>::erase(const KeyType& _key)
 	if (!result)
 		return false;
 
-	if (parent_of_last_erased_node)
+	if (!parent_of_last_erased_node)
 		return true;
 
 	updateHeight(parent_of_last_erased_node);
@@ -994,7 +938,7 @@ protected:
 
 	struct structForEraseBalance
 	{
-		Node* parent; Node* brother; Node* new_node;
+		Node* father; Node* brother; Node* new_node;
 		char node_color; char b_color; char node_side; char child_count;
 		char left_nephew_color; char right_nephew_color;
 
@@ -1006,17 +950,17 @@ protected:
 
 		void setNode(Node* _node)
 		{
-			parent = _node->parent;
+			father = _node->parent;
 			node_color = _node->getColor();
-			if (_node == parent->right)
+			if (_node == father->right)
 			{
 				node_side = 'R';
-				brother = parent->left;
+				brother = father->left;
 			}
 			else
 			{
 				node_side = 'L';
-				brother = parent->right;
+				brother = father->right;
 			}
 
 			if (brother)
@@ -1061,11 +1005,33 @@ protected:
 
 //Public members:
 public:
-	RBTree() {};
-
-	bool insert(const KeyType& _key, const ValueType& _value);
-
-	bool erase(const KeyType& _key);
+	RBTree() { 
+		type = TREE_TYPES::RB;
+		m_size = 0;
+		root = nullptr;
+		last_added_node = nullptr;
+		parent_of_last_erased_node = nullptr;
+	};
+	RBTree(const KeyType& _key, const ValueType& _value)
+	{
+		type = TREE_TYPES::RB;
+		root = new RBNode<KeyType, ValueType>(_key, _value);
+		m_size = 1;
+		last_added_node = root;
+		parent_of_last_erased_node = nullptr;
+	}
+	RBTree(const std::pair<KeyType, ValueType>& _pair) : RBTree(_pair.first, _pair.second) {};
+	RBTree(const std::vector<std::pair<KeyType, ValueType>>& _vector) : RBTree()
+	{
+		for (const auto& pair : _vector)
+			this->insert(pair);
+		parent_of_last_erased_node = nullptr;
+	}
+	
+	virtual ~RBTree() {};
+	
+	virtual bool insert(const KeyType& _key, const ValueType& _value) override;
+	virtual bool erase(const KeyType& _key) override;
 };
 
 template<KEY KeyType, typename ValueType>
@@ -1099,7 +1065,205 @@ void RBTree<KeyType, ValueType>::leftRotate(Node* _node)
 template<KEY KeyType, typename ValueType>
 void RBTree<KeyType, ValueType>::rightRotate(Node* _node)
 {
+	Node* parentOfNode = _node->parent;
+	Node* leftChild = _node->left;
 
+	_node->left = leftChild->right;
+	if (_node->left)
+		_node->left->parent = _node;
+
+	leftChild->right = _node;
+	_node->parent = leftChild;
+
+	if (!parentOfNode)
+	{
+		root = leftChild;
+		root->parent = nullptr;
+		return;
+	}
+
+	if (parentOfNode->right == _node)
+		parentOfNode->right = leftChild;
+	else
+		parentOfNode->left = leftChild;
+
+	leftChild->parent = parentOfNode;
+}
+
+template<KEY KeyType, typename ValueType>
+void RBTree<KeyType, ValueType>::insertBalance()
+{
+	//Создаем структуру для информации необходимой для балансировки
+	structForInsertBalance sfib(last_added_node);
+
+	while(true)
+	{
+		//Если дядя красный
+		if (sfib.u_color == 'R')
+		{
+			//Если попадаем в этот кейс, значит у узла существует черный дед, т.к отец и дядя красные
+			//Перекрашиваем отца и дядю в черный
+			sfib.father->setColor('B'); 
+			sfib.uncle->setColor('B');
+
+			//Если дед корень, дальнейшая балансировка не требуется
+			if (sfib.grand_father == root)
+				return;
+
+			//В противном случае, перекрашиваем деда в красный
+			sfib.grand_father->setColor('R');
+
+			//Если отец деда черный, балансировка завершена
+			if (sfib.grand_father->parent->getColor() == 'B')
+				return;
+
+			//В противном случае, запускаем балансировку для деда
+			sfib.setNode(sfib.grand_father);
+			continue;
+		}
+
+		//Попадаем сюда, если дядя черный
+
+		//Если добавленный узел и его отец, лежат на разных сторонах отностиельно своих родителей
+		//делаем соответсвующий поворот вокруг отца
+		if (sfib.node_side != sfib.father_side)
+		{
+			if (sfib.node_side == 'R')
+				leftRotate(sfib.father);
+			else
+				rightRotate(sfib.father);
+
+			//Поскольку узел и его отец поменялись местами
+			sfib.setNode(sfib.father);			
+		}
+
+		//Если попадаем сюда, значит узел и его отец лежат на одной стороне относительно своих родителей
+		//Перекрашиваем деда в красный, а отца в черный и делаем поворот вокруг деда со стороны отца
+		sfib.grand_father->setColor('R');
+		sfib.father->setColor('B');
+
+		if (sfib.father_side == 'R')
+			leftRotate(sfib.grand_father);
+		else
+			rightRotate(sfib.grand_father);
+
+		return;
+	} 
+}
+
+template<KEY KeyType, typename ValueType>
+void RBTree<KeyType, ValueType>::eraseBalance(structForEraseBalance& sfeb)
+{
+	//Если удаленный узел был красным балансировка не требуется
+	if (sfeb.node_color == 'R')
+		return;
+
+	//Если удаленный элемент имел одного ребенка красного цвета, перекрашиваем его(ребенка) в черный
+	if (sfeb.child_count == 1 && sfeb.new_node->getColor() == 'R')
+	{
+		sfeb.new_node->setColor('B');
+		return;
+	}
+
+	while (true)
+	{
+		//Если брат удаленного элемента красный
+		if (sfeb.b_color == 'R')
+		{
+			//Если оба ребенка красного брата черные, красим племянника лежащего на той же стороне, что и
+			//удаленный узел в красный, а красного брата в черный
+			if (sfeb.left_nephew_color == 'B' && sfeb.right_nephew_color == 'B')
+			{
+				if (sfeb.node_side == 'R')
+					sfeb.brother->right->setColor('R');
+				else
+					sfeb.brother->left->setColor('R');
+
+				sfeb.brother->setColor('B');
+			}
+			else //В противном случае, красим брата в черный, а отца в красный
+			{
+				sfeb.brother->setColor('B');
+				sfeb.father->setColor('R');
+			}
+
+			//Затем делаем поворот вокруг отца со стороны брата
+			if (sfeb.father->right == sfeb.brother)
+				leftRotate(sfeb.father);
+			else
+				rightRotate(sfeb.father);
+
+			return;
+		}
+
+		//Если брат черный и оба племянника тоже черные
+		if (sfeb.left_nephew_color == 'B' && sfeb.right_nephew_color == 'B')
+		{
+			//Если черный родитель, красим брата в красный и повторяем алгоритм для отца,
+			//пока не дойдем до корня
+			if (sfeb.father->getColor() == 'B')
+			{
+				sfeb.brother->setColor('R');
+				
+				if (sfeb.father == root)									
+					return;
+				
+				sfeb.setNode(sfeb.father);
+				continue;
+			}
+
+			//Если отец красный, перекрашиваем его в черный, а брата в красный
+			sfeb.father->setColor('B');
+			sfeb.brother->setColor('R');
+			return;
+		}
+
+		//Если противоположный удаленному узлу племянник красный, перекрашиваем его(племянника) в черный, затем
+		//перекрашиваем брата в цвет отца, а отца в черный и делаем поворот вокруг отца со строны братского узла
+		if ((sfeb.node_side == 'R' && sfeb.left_nephew_color == 'R') ||
+			(sfeb.node_side == 'L' && sfeb.right_nephew_color == 'R'))
+		{
+			if (sfeb.node_side == 'R')
+				sfeb.brother->left->setColor('B');
+			else
+				sfeb.brother->right->setColor('B');
+
+			sfeb.brother->setColor(sfeb.father->getColor());
+			sfeb.father->setColor('B');
+
+			if (sfeb.father->right == sfeb.brother)
+				leftRotate(sfeb.father);
+			else
+				rightRotate(sfeb.father);
+
+			return;
+		}
+
+		//Если противоположный удаленному узлу племянник черный, а другой племянник красный, перекрашиваем
+		//красного племянника в цвет отца, а отца в черный, затем делаем поворот вокруг брата со стороны
+		//красного племянника, а после делаем поворот вокруг отца с другой стороны
+		if ((sfeb.node_side == 'R' && sfeb.left_nephew_color == 'B' && sfeb.right_nephew_color == 'R') ||
+			(sfeb.node_side == 'L' && sfeb.right_nephew_color == 'B' && sfeb.left_nephew_color == 'R'))
+		{
+			if (sfeb.node_side == 'R')
+			{
+				sfeb.brother->right->setColor(sfeb.father->getColor());
+				sfeb.father->setColor('B');
+				leftRotate(sfeb.brother);
+				rightRotate(sfeb.father);
+				return;
+			}
+			else
+			{
+				sfeb.brother->left->setColor(sfeb.father->getColor());
+				sfeb.father->setColor('B');
+				rightRotate(sfeb.brother);
+				leftRotate(sfeb.father);
+				return;
+			}
+		}
+
+	}
 }
 
 template<KEY KeyType, typename ValueType>
@@ -1110,6 +1274,7 @@ bool RBTree<KeyType, ValueType>::insert(const KeyType& _key, const ValueType& _v
 	if (!result)
 		return false;
 
+	//Если добавленный элемент стал корнем, его нужно перекрасить в черный 
 	if (!last_added_node->parent)
 	{
 		root->setColor('B');
@@ -1121,6 +1286,7 @@ bool RBTree<KeyType, ValueType>::insert(const KeyType& _key, const ValueType& _v
 		return true;
 
 	insertBalance();
+	return true;
 }
 
 template<KEY KeyType, typename ValueType>
@@ -1133,7 +1299,7 @@ bool RBTree<KeyType, ValueType>::erase(const KeyType& _key)
 	// Создаем структуру для хранения информации для балансировки после удаления элемента
 	structForEraseBalance sfeb; 
 
-	// Далее вызваем sfeb.setNode() для узла который будет физически удален
+	// Далее вызваем sfeb.setNode() для узла который будет фактически удален
 	// и выполняем обычный алгоритм удаления
 	if (nodeToErase->left && nodeToErase->right)
 	{
@@ -1155,7 +1321,7 @@ bool RBTree<KeyType, ValueType>::erase(const KeyType& _key)
 				parent_of_last_erased_node->left = newNode->left;
 
 			delete newNode;
-			m_size;
+			--m_size;
 			eraseBalance(sfeb);
 			return true;
 		}
@@ -1167,7 +1333,7 @@ bool RBTree<KeyType, ValueType>::erase(const KeyType& _key)
 			parent_of_last_erased_node->left = nullptr;
 
 		delete newNode;
-		m_size;
+		--m_size;
 		eraseBalance(sfeb);
 		return true;
 	}
@@ -1180,11 +1346,12 @@ bool RBTree<KeyType, ValueType>::erase(const KeyType& _key)
 		//Если удаляемый элемент был корнем, достаточно просто перекрасить новый корень в черный
 		if (nodeToErase == root)
 		{
-			root =root->left;
-			troot->parent = nullptr;
+			root = root->left;
+			root->parent = nullptr;
+			root->setColor('B');
 
 			delete nodeToErase;
-			m_size;
+			--m_size;
 			return true;
 		}
 
@@ -1196,9 +1363,8 @@ bool RBTree<KeyType, ValueType>::erase(const KeyType& _key)
 		nodeToErase->left->parent = parent_of_last_erased_node;
 
 		delete nodeToErase;
-		m_size;
+		--m_size;
 		eraseBalance(sfeb);
-
 		return true;
 	}
 
@@ -1209,15 +1375,42 @@ bool RBTree<KeyType, ValueType>::erase(const KeyType& _key)
 		{
 			root = root->right;
 			root->parent = nullptr;
+			root->setColor('B');
 
 			delete nodeToErase;
-			m_size;
+			--m_size;
 			return true;
 		}
 
+		if (parent_of_last_erased_node->right == nodeToErase)
+			parent_of_last_erased_node->right = nodeToErase->right;
+		else
+			parent_of_last_erased_node->left = nodeToErase->right;
+
+		nodeToErase->right->parent = parent_of_last_erased_node;
+
+		delete nodeToErase;
+		--m_size;
+		eraseBalance(sfeb);
 		return true;
 	}
+
+	if (parent_of_last_erased_node)
+	{
+		if (parent_of_last_erased_node->right == nodeToErase)
+			parent_of_last_erased_node->right = nullptr;
+		else
+			parent_of_last_erased_node->left = nullptr;
+	}
+	else
+		root = nullptr;
+
+	delete nodeToErase;
+	--m_size;
+	eraseBalance(sfeb);
+	return true;
 }
+
 
 //------------------------------------------------------------------------------------------------------
 //-------------------------------------------- CLASS RBTREE --------------------------------------------
