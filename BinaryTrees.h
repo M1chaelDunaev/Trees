@@ -176,7 +176,7 @@ public:
 		}
 	};
 
-//Protected members:
+//Protected members: 
 protected:	
 	Node* root;
 	Node* last_added_node;
