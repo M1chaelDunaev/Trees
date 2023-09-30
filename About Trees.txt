@@ -80,3 +80,53 @@
 	void insertBalance() - Выполняет балансировку дерева после вставки нового узла.
 	void eraseBalance(structForEraseBalance&) - Выполняет балансировку дерева после удаления узла.
 
+Описание алгоритмов:
+	
+	Узлы:
+		BasicNode - базовый класс, от которого наследуются классы AVLNode и RBNode.
+		Имеет виртуальный методы getHeight(), setHeight(short), getColor(), setColor(char).
+		Структура BasicNode:
+			KeyType key; - ключ
+			ValueType value; - значение
+
+			BasicNode* parent; - указатель на родительский узел.
+			BasicNode* left; - указатель на левый дочерний узел.
+			BasicNode* right; - указатель на правый дочерний узел.
+
+		AVLNode имеет дополнительное поле short height и переопределяет методы  getHeight(), setHeight(short).
+		RBNode имеет дополнительное поле char color и переопределяет методы getColor(), setColor(char)
+
+
+	Деревья:
+		Tree - базовый класс от которого наследуются AVLTree и RBTree.
+		Структура Tree:
+			BasicNode* root; - Указатель на корень.
+			BasicNode* last_added_node; - Указатель на последний добавленный узел.
+			BasicNode* parent_of_last_erased_node; - Указатель на родителя последнего удаленного узла.
+
+			TREE_TYPES type; - TREE_TYPES перечисление которое хранит виды деревьев, type хранит вид экземляра класса.
+			int m_size; - Хранит количество узлов.
+
+		AVLTree и RBTree не имеют дополнительных полей.
+
+	Вставка нового узла в дерево:
+		1.Если корень = nullptr, присваиваем root новый узел. Возвращаем true.
+		2.Создаем указатель BasicNode* searchPtr и присваиваем ему корневой узел.
+		3.Начинаем бесконечный цикл: 
+		-Если _key(переданный ключ) уже есть в searchPtr, вовзращаем false.
+		-Если _key больше ключа searchPtr:
+			-Если searchPtr->right = nullptr, присваиваем searchPtr->right новый узел.
+				Используем switch(type) для коректного выделения памяти в соответсвие с типом дерева.
+				Например: AVLNode для AVL дерева.
+			-Если searchPtr->right не nullptr, присваиевам searchPtr = searchPtr->right и начинаем новую итерацию.
+		-Если _key меньше ключа searchPtr:
+			-Если searchPtr->left = nullptr, присваиваем searchPtr->left новый узел.
+				Используем switch(type) для коректного выделения памяти в соответсвие с типом дерева.
+				Например: AVLNode для AVL дерева.
+			-Если searchPtr->left не nullptr, присваиевам searchPtr = searchPtr->left и начинаем новую итерацию.
+		4.Для AVL дерева циклом идем по родителям от последнего добавленного узла до корня и обновляем высоту.
+			Затем начинаем балансировку.
+		  Для RB дерева просто начинаем балансировку. 
+
+	Удаление узла из дерева:
+		1
